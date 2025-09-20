@@ -52,9 +52,12 @@ async function ThreadsTab({ currentUserId, accountId, accountType }: Props) {
     redirect("/");
   }
 
+  // TypeScript assertion since we've already checked for null above
+  const validResult = result as Result;
+
   return (
     <section className='mt-9 flex flex-col gap-10'>
-      {result.threads.map((thread) => (
+      {validResult.threads.map((thread) => (
         <ThreadCard
           key={thread._id}
           id={thread._id}
@@ -63,7 +66,7 @@ async function ThreadsTab({ currentUserId, accountId, accountType }: Props) {
           content={thread.text}
           author={
             accountType === "User"
-              ? { name: result.name, image: result.image, id: result.id }
+              ? { name: validResult.name, image: validResult.image, id: validResult.id }
               : {
                   name: thread.author.name,
                   image: thread.author.image,
@@ -72,7 +75,7 @@ async function ThreadsTab({ currentUserId, accountId, accountType }: Props) {
           }
           community={
             accountType === "Community"
-              ? { name: result.name, id: result.id, image: result.image }
+              ? { name: validResult.name, id: validResult.id, image: validResult.image }
               : thread.community
           }
           createdAt={thread.createdAt}
