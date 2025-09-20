@@ -43,9 +43,38 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20) {
 
   const posts = await postsQuery.exec();
 
+  // Serialize the posts to plain objects to avoid circular references
+  const serializedPosts = posts.map(post => ({
+    _id: post._id.toString(),
+    text: post.text,
+    author: {
+      _id: post.author._id.toString(),
+      id: post.author.id,
+      name: post.author.name,
+      image: post.author.image,
+    },
+    community: post.community ? {
+      _id: post.community._id.toString(),
+      id: post.community.id,
+      name: post.community.name,
+      image: post.community.image,
+    } : null,
+    createdAt: post.createdAt,
+    parentId: post.parentId,
+    children: post.children.map((child: any) => ({
+      _id: child._id.toString(),
+      author: {
+        _id: child.author._id.toString(),
+        name: child.author.name,
+        image: child.author.image,
+      },
+    })),
+    likedBy: post.likedBy.map((id: any) => id.toString()),
+  }));
+
   const isNext = totalPostsCount > skipAmount + posts.length;
 
-  return { posts, isNext };
+  return { posts: serializedPosts, isNext };
 }
 
 interface Params {
@@ -193,7 +222,59 @@ export async function fetchThreadById(threadId: string) {
       })
       .exec();
 
-    return thread;
+    if (!thread) {
+      return null;
+    }
+
+    // Serialize the thread to plain object to avoid circular references
+    const serializedThread = {
+      _id: thread._id.toString(),
+      text: thread.text,
+      author: {
+        _id: thread.author._id.toString(),
+        id: thread.author.id,
+        name: thread.author.name,
+        image: thread.author.image,
+      },
+      community: thread.community ? {
+        _id: thread.community._id.toString(),
+        id: thread.community.id,
+        name: thread.community.name,
+        image: thread.community.image,
+      } : null,
+      createdAt: thread.createdAt,
+      parentId: thread.parentId,
+      children: thread.children.map((child: any) => ({
+        _id: child._id.toString(),
+        text: child.text,
+        author: {
+          _id: child.author._id.toString(),
+          id: child.author.id,
+          name: child.author.name,
+          image: child.author.image,
+        },
+        community: child.community ? {
+          _id: child.community._id.toString(),
+          id: child.community.id,
+          name: child.community.name,
+          image: child.community.image,
+        } : null,
+        createdAt: child.createdAt,
+        parentId: child.parentId,
+        children: child.children ? child.children.map((grandChild: any) => ({
+          _id: grandChild._id.toString(),
+          author: {
+            _id: grandChild.author._id.toString(),
+            name: grandChild.author.name,
+            image: grandChild.author.image,
+          },
+        })) : [],
+        likedBy: child.likedBy ? child.likedBy.map((id: any) => id.toString()) : [],
+      })),
+      likedBy: thread.likedBy.map((id: any) => id.toString()),
+    };
+
+    return serializedThread;
   } catch (err) {
     console.error("Error while fetching thread:", err);
     throw new Error("Unable to fetch thread");

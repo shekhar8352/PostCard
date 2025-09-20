@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 
 import { formatDateString } from "@/lib/utils";
 import DeleteThread from "../forms/DeleteThread";
-import { likeThread } from "@/lib/actions/like.actions";
+import { likeThread, checkIfUserLikedThread } from "@/lib/actions/like.actions";
 
 interface Props {
   id: string;
@@ -44,7 +45,44 @@ function ThreadCard({
   likedBy,
   isComment,
 }: Props) {
-  const isLiked = likedBy?.includes(currentUserId);
+  // Note: likedBy contains MongoDB ObjectIds, but currentUserId is a Clerk ID
+  // We'll handle the comparison in the like action instead
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(likedBy?.length || 0);
+  const [isLiking, setIsLiking] = useState(false);
+
+  // Check initial like state
+  useEffect(() => {
+    const checkLikeStatus = async () => {
+      try {
+        const liked = await checkIfUserLikedThread(id, currentUserId);
+        setIsLiked(liked);
+      } catch (error) {
+        console.error("Error checking like status:", error);
+      }
+    };
+    
+    checkLikeStatus();
+  }, [id, currentUserId]);
+
+  const handleLike = async () => {
+    if (isLiking) return; // Prevent multiple clicks
+    
+    setIsLiking(true);
+    try {
+      const result = await likeThread(id, currentUserId);
+      if (result.success) {
+        // Update the UI with the response from the server
+        setIsLiked(result.isLiked);
+        setLikeCount(result.likeCount);
+      }
+    } catch (error) {
+      console.error("Error liking thread:", error);
+      // Keep current state on error
+    } finally {
+      setIsLiking(false);
+    }
+  };
 
   return (
     <article
@@ -86,15 +124,15 @@ function ThreadCard({
                 <div className="flex gap-4 items-center">
                   <div className="flex items-center gap-1">
                     <Image
-                      src={isLiked ? "/assets/heart-red.svg" : "/assets/heart-gray.svg"}
+                      src={isLiked ? "/assets/heart-filled.svg" : "/assets/heart-gray.svg"}
                       alt="like"
                       width={24}
                       height={24}
-                      className="cursor-pointer object-contain"
-                      onClick={() => likeThread(id, currentUserId)}
+                      className={`cursor-pointer object-contain ${isLiking ? 'opacity-50' : ''}`}
+                      onClick={handleLike}
                     />
                     <span className="text-subtle-medium text-gray-1">
-                      {likedBy?.length || 0}
+                      {likeCount}
                     </span>
                   </div>
 

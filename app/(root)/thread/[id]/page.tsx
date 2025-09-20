@@ -20,6 +20,10 @@ async function page({ params }: { params: { id: string } }) {
 
   const thread = await fetchThreadById(params.id);
 
+  if (!thread) {
+    return <div>Thread not found</div>;
+  }
+
   return (
     <section className='relative'>
       <div>

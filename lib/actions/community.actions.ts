@@ -95,7 +95,46 @@ export async function fetchCommunityPosts(id: string) {
       ],
     });
 
-    return communityPosts;
+    if (!communityPosts) {
+      return null;
+    }
+
+    // Serialize the community posts to plain objects to avoid circular references
+    const serializedThreads = communityPosts.threads.map((thread: any) => ({
+      _id: thread._id.toString(),
+      text: thread.text,
+      author: {
+        _id: thread.author._id.toString(),
+        id: thread.author.id,
+        name: thread.author.name,
+        image: thread.author.image,
+      },
+      community: {
+        _id: communityPosts._id.toString(),
+        id: communityPosts.id,
+        name: communityPosts.name,
+        image: communityPosts.image,
+      },
+      createdAt: thread.createdAt,
+      parentId: thread.parentId,
+      children: thread.children.map((child: any) => ({
+        _id: child._id.toString(),
+        author: {
+          _id: child.author._id.toString(),
+          name: child.author.name,
+          image: child.author.image,
+        },
+      })),
+      likedBy: thread.likedBy ? thread.likedBy.map((id: any) => id.toString()) : [],
+    }));
+
+    return {
+      _id: communityPosts._id.toString(),
+      id: communityPosts.id,
+      name: communityPosts.name,
+      image: communityPosts.image,
+      threads: serializedThreads,
+    };
   } catch (error) {
     // Handle any errors
     console.error("Error fetching community posts:", error);

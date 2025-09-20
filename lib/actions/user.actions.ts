@@ -87,7 +87,47 @@ export async function fetchUserPosts(userId: string) {
         },
       ],
     });
-    return threads;
+
+    if (!threads) {
+      return null;
+    }
+
+    // Serialize the threads to plain objects to avoid circular references
+    const serializedThreads = threads.threads.map((thread: any) => ({
+      _id: thread._id.toString(),
+      text: thread.text,
+      author: {
+        _id: thread.author._id.toString(),
+        id: thread.author.id,
+        name: thread.author.name,
+        image: thread.author.image,
+      },
+      community: thread.community ? {
+        _id: thread.community._id.toString(),
+        id: thread.community.id,
+        name: thread.community.name,
+        image: thread.community.image,
+      } : null,
+      createdAt: thread.createdAt,
+      parentId: thread.parentId,
+      children: thread.children.map((child: any) => ({
+        _id: child._id.toString(),
+        author: {
+          _id: child.author._id.toString(),
+          name: child.author.name,
+          image: child.author.image,
+        },
+      })),
+      likedBy: thread.likedBy ? thread.likedBy.map((id: any) => id.toString()) : [],
+    }));
+
+    return {
+      _id: threads._id.toString(),
+      id: threads.id,
+      name: threads.name,
+      image: threads.image,
+      threads: serializedThreads,
+    };
   } catch (error) {
     console.error("Error fetching user threads:", error);
     throw error;
