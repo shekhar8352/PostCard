@@ -1,6 +1,7 @@
 import React from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next"
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 
@@ -36,6 +37,7 @@ export default function RootLayout({
             <LeftSidebar />
             <section className='main-container'>
               <div className='w-full max-w-4xl'>{children}</div>
+              <Analytics />
             </section>
             {/* @ts-ignore */}
             <RightSidebar />
