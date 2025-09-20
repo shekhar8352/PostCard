@@ -27,8 +27,24 @@ const threadSchema = new mongoose.Schema({
       ref: "Thread",
     },
   ],
+  likedBy: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: [],
+    },
+  ],
 });
 
-const Thread = mongoose.models.Thread || mongoose.model("Thread", threadSchema);
+// Ensure `likedBy` is always set, even in old docs
+threadSchema.pre("save", function (next) {
+  if (!this.likedBy) {
+    this.likedBy = [];
+  }
+  next();
+});
+
+const Thread =
+  mongoose.models.Thread || mongoose.model("Thread", threadSchema);
 
 export default Thread;

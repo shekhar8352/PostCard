@@ -29,6 +29,7 @@ interface Result {
         image: string;
       };
     }[];
+    likedBy: string[];
   }[];
 }
 
@@ -76,6 +77,7 @@ async function ThreadsTab({ currentUserId, accountId, accountType }: Props) {
           }
           createdAt={thread.createdAt}
           comments={thread.children}
+          likedBy={thread.likedBy}
         />
       ))}
     </section>
