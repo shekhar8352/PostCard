@@ -52,12 +52,16 @@ async function ThreadsTab({ currentUserId, accountId, accountType }: Props) {
     redirect("/");
   }
 
-  // TypeScript assertion since we've already checked for null above
   const validResult = result as Result;
 
+  // Sort threads so latest createdAt comes first
+  const sortedThreads = [...validResult.threads].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
   return (
-    <section className='mt-9 flex flex-col gap-10'>
-      {validResult.threads.map((thread) => (
+    <section className="mt-9 flex flex-col gap-10">
+      {sortedThreads.map((thread) => (
         <ThreadCard
           key={thread._id}
           id={thread._id}
