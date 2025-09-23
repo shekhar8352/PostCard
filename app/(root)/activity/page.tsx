@@ -3,7 +3,8 @@ import Link from "next/link";
 import { currentUser } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 
-import { fetchUser, getActivity } from "@/lib/actions/user.actions";
+// ✅ Adjust imports based on your actual file structure
+import { getActivity, fetchUser } from "@/lib/actions/user.actions";
 
 async function Page() {
   const user = await currentUser();
@@ -14,36 +15,78 @@ async function Page() {
 
   const activity = await getActivity(userInfo._id);
 
+  const replies = (activity.replies || []).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
+  const likes = (activity.likes || []).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
   return (
     <>
-      <h1 className='head-text'>Activity</h1>
+      <h1 className="head-text">Activity</h1>
 
-      <section className='mt-10 flex flex-col gap-5'>
-        {activity.length > 0 ? (
-          <>
-            {activity.map((activity) => (
-              <Link key={activity._id} href={`/thread/${activity.parentId}`}>
-                <article className='activity-card'>
-                  <Image
-                    src={activity.author.image}
-                    alt='user_logo'
-                    width={20}
-                    height={20}
-                    className='rounded-full object-cover'
-                  />
-                  <p className='!text-small-regular text-light-1'>
-                    <span className='mr-1 text-primary-500'>
-                      {activity.author.name}
-                    </span>{" "}
-                    replied to your thread
-                  </p>
-                </article>
-              </Link>
-            ))}
-          </>
-        ) : (
-          <p className='!text-base-regular text-light-3'>No activity yet</p>
-        )}
+      <section className="mt-10 flex flex-col gap-10">
+        {/* Replies Section */}
+        <div>
+          <h2 className="text-light-2 text-lg font-semibold mb-4">Replies</h2>
+          {replies.length > 0 ? (
+            <div className="flex flex-col gap-4">
+              {replies.map((reply) => (
+                <Link key={reply._id} href={`/thread/${reply.parentId}`}>
+                  <article className="activity-card">
+                    <Image
+                      src={reply.author.image}
+                      alt="user_logo"
+                      width={20}
+                      height={20}
+                      className="rounded-full object-cover"
+                    />
+                    <p className="!text-small-regular text-light-1">
+                      <span className="mr-1 text-primary-500">
+                        {reply.author.name}
+                      </span>
+                      replied to your postcard
+                    </p>
+                  </article>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="!text-base-regular text-light-3">No replies yet</p>
+          )}
+        </div>
+
+
+       {/* Likes Section */}
+        <div>
+          <h2 className="text-light-2 text-lg font-semibold mb-4">Likes</h2>
+          {likes.length > 0 ? (
+            <div className="flex flex-col gap-4">
+              {likes.map((like) => (
+                <Link key={like._id} href={`/thread/${like.threadId}`}>
+                  <article className="activity-card">
+                    <Image
+                      src={like.author.image}
+                      alt="user_logo"
+                      width={20}
+                      height={20}
+                      className="rounded-full object-cover"
+                    />
+                    <p className="!text-small-regular text-light-1">
+                      <span className="mr-1 text-primary-500">{like.author.name}</span>
+                      liked your postcard
+                    </p>
+                  </article>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="!text-base-regular text-light-3">No likes yet</p>
+          )}
+        </div>
+
       </section>
     </>
   );

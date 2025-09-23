@@ -145,21 +145,6 @@ function ThreadCard({
                       className="cursor-pointer object-contain"
                     />
                   </Link>
-
-                  <Image
-                    src="/assets/repost.svg"
-                    alt="repost"
-                    width={24}
-                    height={24}
-                    className="cursor-pointer object-contain"
-                  />
-                  <Image
-                    src="/assets/share.svg"
-                    alt="share"
-                    width={24}
-                    height={24}
-                    className="cursor-pointer object-contain"
-                  />
                 </div>
 
                 {/* Right: timestamp */}

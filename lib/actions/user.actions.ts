@@ -1,6 +1,6 @@
 "use server";
 
-import { FilterQuery, SortOrder } from "mongoose";
+import mongoose, { FilterQuery, SortOrder } from "mongoose";
 import { revalidatePath } from "next/cache";
 
 import Community from "../models/community.model";
@@ -197,27 +197,89 @@ export async function getActivity(userId: string) {
   try {
     connectToDB();
 
-    // Find all threads created by the user
-    const userThreads = await Thread.find({ author: userId });
+    const userObjectId = new mongoose.Types.ObjectId(userId);
 
-    // Collect all the child thread ids (replies) from the 'children' field of each user thread
-    const childThreadIds = userThreads.reduce((acc, userThread) => {
-      return acc.concat(userThread.children);
-    }, []);
+    // ---- Replies pipeline ----
+    const replies = await Thread.aggregate([
+      // Find threads authored by user
+      { $match: { author: userObjectId } },
+      // Join with children (replies)
+      {
+        $lookup: {
+          from: "threads",
+          localField: "children",
+          foreignField: "_id",
+          as: "childThreads",
+        },
+      },
+      { $unwind: "$childThreads" },
+      // Only keep replies not authored by the user
+      { $match: { "childThreads.author": { $ne: userObjectId } } },
+      // Lookup reply author
+      {
+        $lookup: {
+          from: "users",
+          localField: "childThreads.author",
+          foreignField: "_id",
+          as: "replyAuthor",
+        },
+      },
+      { $unwind: "$replyAuthor" },
+      {
+        $project: {
+          _id: "$childThreads._id",
+          text: "$childThreads.text",
+          parentId: "$_id",
+          createdAt: "$childThreads.createdAt",
+          author: {
+            _id: "$replyAuthor._id",
+            id: "$replyAuthor.id",
+            name: "$replyAuthor.name",
+            image: "$replyAuthor.image",
+          },
+        },
+      },
+      { $sort: { createdAt: -1 } },
+    ]);
 
-    // Find and return the child threads (replies) excluding the ones created by the same user
-    const replies = await Thread.find({
-      _id: { $in: childThreadIds },
-      author: { $ne: userId }, // Exclude threads authored by the same user
-    }).populate({
-      path: "author",
-      model: User,
-      select: "name image _id",
-    });
+    // ---- Likes pipeline ----
+    const likes = await Thread.aggregate([
+      // Get threads authored by the user
+      { $match: { author: userObjectId } },
+      // Unwind likedBy (each like is its own document)
+      { $unwind: "$likedBy" },
+      // Skip self-likes
+      { $match: { likedBy: { $ne: userObjectId } } },
+      // Lookup liker user details
+      {
+        $lookup: {
+          from: "users",
+          localField: "likedBy",
+          foreignField: "_id",
+          as: "liker",
+        },
+      },
+      { $unwind: "$liker" },
+      {
+        $project: {
+          _id: { $concat: [{ $toString: "$_id" }, "_", { $toString: "$liker._id" }] },
+          threadId: "$_id",
+          text: "$text",
+          createdAt: "$createdAt", // thread createdAt, not per-like timestamp
+          author: {
+            _id: "$liker._id",
+            id: "$liker.id",
+            name: "$liker.name",
+            image: "$liker.image",
+          },
+        },
+      },
+      { $sort: { createdAt: -1 } },
+    ]);
 
-    return replies;
+    return { replies, likes };
   } catch (error) {
-    console.error("Error fetching replies: ", error);
+    console.error("Error fetching activity:", error);
     throw error;
   }
 }
