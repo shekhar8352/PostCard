@@ -8,43 +8,37 @@ import User from "../models/user.model";
 import Thread from "../models/thread.model";
 import Community from "../models/community.model";
 
-export async function fetchPosts(pageNumber = 1, pageSize = 20) {
+export async function fetchPosts(pageNumber = 1, pageSize = 20, userId?: string) {
   connectToDB();
 
-  // Calculate the number of posts to skip based on the page number and page size.
   const skipAmount = (pageNumber - 1) * pageSize;
 
-  // Create a query to fetch the posts that have no parent (top-level threads) (a thread that is not a comment/reply).
-  const postsQuery = Thread.find({ parentId: { $in: [null, undefined] } })
-    .sort({ createdAt: "desc" })
+  // Base filter: only top-level posts, not authored by the current user
+  const filter: any = {
+    parentId: { $in: [null, undefined] },
+  };
+
+  if (userId) {
+    filter.author = { $ne: userId };
+  }
+
+  const postsQuery = Thread.find(filter)
+    .sort({ createdAt: -1 })
     .skip(skipAmount)
     .limit(pageSize)
+    .populate("author")
+    .populate("community")
     .populate({
-      path: "author",
-      model: User,
-    })
-    .populate({
-      path: "community",
-      model: Community,
-    })
-    .populate({
-      path: "children", // Populate the children field
-      populate: {
-        path: "author", // Populate the author field within children
-        model: User,
-        select: "_id name parentId image", // Select only _id and username fields of the author
-      },
+      path: "children",
+      populate: { path: "author", model: User, select: "_id name parentId image" },
     });
 
-  // Count the total number of top-level posts (threads) i.e., threads that are not comments.
-  const totalPostsCount = await Thread.countDocuments({
-    parentId: { $in: [null, undefined] },
-  }); // Get the total count of posts
+  const totalPostsCount = await Thread.countDocuments(filter);
 
   const posts = await postsQuery.exec();
 
-  // Serialize the posts to plain objects to avoid circular references
-  const serializedPosts = posts.map(post => ({
+  // Serialize
+  const serializedPosts = posts.map((post: any) => ({
     _id: post._id.toString(),
     text: post.text,
     author: {
@@ -53,12 +47,14 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20) {
       name: post.author.name,
       image: post.author.image,
     },
-    community: post.community ? {
-      _id: post.community._id.toString(),
-      id: post.community.id,
-      name: post.community.name,
-      image: post.community.image,
-    } : null,
+    community: post.community
+      ? {
+          _id: post.community._id.toString(),
+          id: post.community.id,
+          name: post.community.name,
+          image: post.community.image,
+        }
+      : null,
     createdAt: post.createdAt,
     parentId: post.parentId,
     children: post.children.map((child: any) => ({
@@ -76,6 +72,8 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20) {
 
   return { posts: serializedPosts, isNext };
 }
+
+
 
 interface Params {
   text: string,

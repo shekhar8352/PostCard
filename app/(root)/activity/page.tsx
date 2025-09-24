@@ -3,7 +3,6 @@ import Link from "next/link";
 import { currentUser } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 
-// ✅ Adjust imports based on your actual file structure
 import { getActivity, fetchUser } from "@/lib/actions/user.actions";
 
 async function Page() {
