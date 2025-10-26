@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { formatDateString } from "@/lib/utils";
 import DeleteThread from "../forms/DeleteThread";
 import { likeThread, checkIfUserLikedThread } from "@/lib/actions/like.actions";
+import { MentionRenderer } from "@/components/shared/MentionRenderer";
 
 interface Props {
   id: string;
@@ -30,6 +31,12 @@ interface Props {
     };
   }[];
   likedBy: string[];
+  mentionedUsers?: Array<{
+    _id: string;
+    id: string;
+    username: string;
+    name: string;
+  }>;
   isComment?: boolean;
 }
 
@@ -43,6 +50,7 @@ function ThreadCard({
   createdAt,
   comments,
   likedBy,
+  mentionedUsers = [],
   isComment,
 }: Props) {
   // Note: likedBy contains MongoDB ObjectIds, but currentUserId is a Clerk ID
@@ -112,7 +120,9 @@ function ThreadCard({
               </h4>
             </Link>
 
-            <p className="mt-2 text-small-regular text-light-2">{content}</p>
+            <div className="mt-2 text-small-regular text-light-2">
+              <MentionRenderer content={content} mentionedUsers={mentionedUsers} />
+            </div>
 
             <div
               className={`${

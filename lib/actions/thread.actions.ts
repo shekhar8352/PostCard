@@ -29,6 +29,11 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20, userId?: string)
     .populate("author")
     .populate("community")
     .populate({
+      path: "mentionedUsers",
+      model: User,
+      select: "_id id username name",
+    })
+    .populate({
       path: "children",
       populate: { path: "author", model: User, select: "_id name parentId image" },
     });
@@ -57,6 +62,12 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20, userId?: string)
       : null,
     createdAt: post.createdAt,
     parentId: post.parentId,
+    mentionedUsers: post.mentionedUsers ? post.mentionedUsers.map((user: any) => ({
+      _id: user._id.toString(),
+      id: user.id,
+      username: user.username,
+      name: user.name,
+    })) : [],
     children: post.children.map((child: any) => ({
       _id: child._id.toString(),
       author: {
@@ -80,9 +91,10 @@ interface Params {
   author: string,
   communityId: string | null,
   path: string,
+  mentionedUsers?: string[],
 }
 
-export async function createThread({ text, author, communityId, path }: Params
+export async function createThread({ text, author, communityId, path, mentionedUsers = [] }: Params
 ) {
   try {
     connectToDB();
@@ -92,10 +104,16 @@ export async function createThread({ text, author, communityId, path }: Params
       { _id: 1 }
     );
 
+    // Convert mentioned user IDs to ObjectIds
+    const mentionedUserObjectIds = mentionedUsers.length > 0 
+      ? await User.find({ _id: { $in: mentionedUsers } }).select('_id')
+      : [];
+
     const createdThread = await Thread.create({
       text,
       author,
       community: communityIdObject, // Assign communityId if provided, or leave it null for personal account
+      mentionedUsers: mentionedUserObjectIds.map((user: any) => user._id),
     });
 
     // Update User model
@@ -200,12 +218,22 @@ export async function fetchThreadById(threadId: string) {
         select: "_id id name image",
       }) // Populate the community field with _id and name
       .populate({
+        path: "mentionedUsers",
+        model: User,
+        select: "_id id username name",
+      }) // Populate mentioned users
+      .populate({
         path: "children", // Populate the children field
         populate: [
           {
             path: "author", // Populate the author field within children
             model: User,
             select: "_id id name parentId image", // Select only _id and username fields of the author
+          },
+          {
+            path: "mentionedUsers", // Populate mentioned users in children
+            model: User,
+            select: "_id id username name",
           },
           {
             path: "children", // Populate the children field within children
@@ -242,6 +270,12 @@ export async function fetchThreadById(threadId: string) {
       } : null,
       createdAt: thread.createdAt,
       parentId: thread.parentId,
+      mentionedUsers: thread.mentionedUsers ? thread.mentionedUsers.map((user: any) => ({
+        _id: user._id.toString(),
+        id: user.id,
+        username: user.username,
+        name: user.name,
+      })) : [],
       children: thread.children.map((child: any) => ({
         _id: child._id.toString(),
         text: child.text,
@@ -259,6 +293,12 @@ export async function fetchThreadById(threadId: string) {
         } : null,
         createdAt: child.createdAt,
         parentId: child.parentId,
+        mentionedUsers: child.mentionedUsers ? child.mentionedUsers.map((user: any) => ({
+          _id: user._id.toString(),
+          id: user.id,
+          username: user.username,
+          name: user.name,
+        })) : [],
         children: child.children ? child.children.map((grandChild: any) => ({
           _id: grandChild._id.toString(),
           author: {
@@ -283,7 +323,8 @@ export async function addCommentToThread(
   threadId: string,
   commentText: string,
   userId: string,
-  path: string
+  path: string,
+  mentionedUsers: string[] = []
 ) {
   connectToDB();
 
@@ -295,11 +336,17 @@ export async function addCommentToThread(
       throw new Error("Thread not found");
     }
 
+    // Convert mentioned user IDs to ObjectIds
+    const mentionedUserObjectIds = mentionedUsers.length > 0 
+      ? await User.find({ _id: { $in: mentionedUsers } }).select('_id')
+      : [];
+
     // Create the new comment thread
     const commentThread = new Thread({
       text: commentText,
       author: userId,
       parentId: threadId, // Set the parentId to the original thread's ID
+      mentionedUsers: mentionedUserObjectIds.map((user: any) => user._id),
     });
 
     // Save the comment thread to the database

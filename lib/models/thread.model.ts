@@ -34,12 +34,22 @@ const threadSchema = new mongoose.Schema({
       default: [],
     },
   ],
+  mentionedUsers: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: [],
+    },
+  ],
 });
 
-// Ensure `likedBy` is always set, even in old docs
+// Ensure `likedBy` and `mentionedUsers` are always set, even in old docs
 threadSchema.pre("save", function (next) {
   if (!this.likedBy) {
     this.likedBy = [];
+  }
+  if (!this.mentionedUsers) {
+    this.mentionedUsers = [];
   }
   next();
 });

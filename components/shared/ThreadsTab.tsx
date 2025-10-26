@@ -30,6 +30,12 @@ interface Result {
       };
     }[];
     likedBy: string[];
+    mentionedUsers?: Array<{
+      _id: string;
+      id: string;
+      username: string;
+      name: string;
+    }>;
   }[];
 }
 
@@ -85,6 +91,7 @@ async function ThreadsTab({ currentUserId, accountId, accountType }: Props) {
           createdAt={thread.createdAt}
           comments={thread.children}
           likedBy={thread.likedBy}
+          mentionedUsers={thread.mentionedUsers}
         />
       ))}
     </section>

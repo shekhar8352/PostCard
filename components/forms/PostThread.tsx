@@ -17,10 +17,18 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { UserMention } from "@/components/ui/user-mention";
 
 import { ThreadValidation } from "@/lib/validations/thread";
 import { createThread } from "@/lib/actions/thread.actions";
+
+interface MentionUser {
+  _id: string;
+  id: string;
+  username: string;
+  name: string;
+  image: string;
+}
 
 interface Props {
   userId: string;
@@ -32,14 +40,21 @@ function PostThread({ userId }: Props) {
   const { organization } = useOrganization();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mentionedUsers, setMentionedUsers] = useState<MentionUser[]>([]);
 
   const form = useForm<z.infer<typeof ThreadValidation>>({
     resolver: zodResolver(ThreadValidation),
     defaultValues: {
       thread: "",
       accountId: userId,
+      mentionedUsers: [],
     },
   });
+
+  const handleMentionSelect = (users: MentionUser[]) => {
+    setMentionedUsers(users);
+    form.setValue('mentionedUsers', users.map(user => user._id));
+  };
 
   const onSubmit = async (values: z.infer<typeof ThreadValidation>) => {
     setIsSubmitting(true);
@@ -49,13 +64,13 @@ function PostThread({ userId }: Props) {
         author: userId,
         communityId: organization ? organization.id : null,
         path: pathname,
+        mentionedUsers: mentionedUsers.map(user => user._id),
       });
 
-      // Don’t reset isSubmitting here
-      router.push("/"); 
+      router.push("/");
     } catch (err) {
       console.error(err);
-      setIsSubmitting(false); // only reset if something breaks
+      setIsSubmitting(false);
     }
   };
 
@@ -73,8 +88,15 @@ function PostThread({ userId }: Props) {
               <FormLabel className="text-base-semibold text-light-2">
                 Content
               </FormLabel>
-              <FormControl className="no-focus border border-dark-4 bg-dark-3 text-light-1">
-                <Textarea rows={15} {...field} />
+              <FormControl className="no-focus border border-dark-4 bg-dark-3 text-light-1 w-full">
+                <UserMention
+                  value={field.value}
+                  onChange={field.onChange}
+                  onMentionSelect={handleMentionSelect}
+                  placeholder="What's on your mind? Use @ to mention users..."
+                  className="no-focus border-none bg-transparent text-light-1 resize-none p-3 w-full min-h-[300px]"
+                  rows={15}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

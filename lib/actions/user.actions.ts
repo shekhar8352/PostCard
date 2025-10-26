@@ -77,6 +77,11 @@ export async function fetchUserPosts(userId: string) {
           select: "name id image _id", // Select the "name" and "_id" fields from the "Community" model
         },
         {
+          path: "mentionedUsers",
+          model: User,
+          select: "_id id username name",
+        },
+        {
           path: "children",
           model: Thread,
           populate: {
@@ -110,6 +115,12 @@ export async function fetchUserPosts(userId: string) {
       } : null,
       createdAt: thread.createdAt,
       parentId: thread.parentId,
+      mentionedUsers: thread.mentionedUsers ? thread.mentionedUsers.map((user: any) => ({
+        _id: user._id.toString(),
+        id: user.id,
+        username: user.username,
+        name: user.name,
+      })) : [],
       children: thread.children.map((child: any) => ({
         _id: child._id.toString(),
         author: {
@@ -190,6 +201,40 @@ export async function fetchUsers({
   } catch (error) {
     console.error("Error fetching users:", error);
     throw error;
+  }
+}
+
+export async function searchUsersForMention(searchString: string) {
+  try {
+    connectToDB();
+
+    if (!searchString.trim()) {
+      return [];
+    }
+
+    // Create a case-insensitive regular expression for the provided search string
+    const regex = new RegExp(searchString, "i");
+
+    const users = await User.find({
+      $or: [
+        { username: { $regex: regex } },
+        { name: { $regex: regex } },
+      ],
+    })
+      .select("_id id username name image")
+      .limit(10)
+      .lean();
+
+    return users.map((user: any) => ({
+      _id: user._id.toString(),
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      image: user.image,
+    }));
+  } catch (error) {
+    console.error("Error searching users for mention:", error);
+    return [];
   }
 }
 
@@ -277,7 +322,41 @@ export async function getActivity(userId: string) {
       { $sort: { createdAt: -1 } },
     ]);
 
-    return { replies, likes };
+    // ---- Mentions pipeline ----
+    const mentions = await Thread.aggregate([
+      // Find threads where the user is mentioned
+      { $match: { mentionedUsers: userObjectId } },
+      // Skip threads authored by the user (self-mentions)
+      { $match: { author: { $ne: userObjectId } } },
+      // Lookup thread author
+      {
+        $lookup: {
+          from: "users",
+          localField: "author",
+          foreignField: "_id",
+          as: "threadAuthor",
+        },
+      },
+      { $unwind: "$threadAuthor" },
+      {
+        $project: {
+          _id: "$_id",
+          text: "$text",
+          threadId: "$_id",
+          parentId: "$parentId",
+          createdAt: "$createdAt",
+          author: {
+            _id: "$threadAuthor._id",
+            id: "$threadAuthor.id",
+            name: "$threadAuthor.name",
+            image: "$threadAuthor.image",
+          },
+        },
+      },
+      { $sort: { createdAt: -1 } },
+    ]);
+
+    return { replies, likes, mentions };
   } catch (error) {
     console.error("Error fetching activity:", error);
     throw error;

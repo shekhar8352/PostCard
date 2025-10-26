@@ -49,6 +49,7 @@ async function Home({
                 createdAt={post.createdAt}
                 comments={post.children}
                 likedBy={post.likedBy}
+                mentionedUsers={post.mentionedUsers}
               />
             ))}
           </>
