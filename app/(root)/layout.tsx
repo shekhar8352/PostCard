@@ -1,6 +1,6 @@
 import React from "react";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Outfit } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next"
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
@@ -12,9 +12,10 @@ import RightSidebar from "@/components/shared/RightSidebar";
 import Topbar from "@/components/shared/Topbar";
 
 const inter = Inter({ subsets: ["latin"] });
+export const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
 export const metadata: Metadata = {
-  title: "PostCard",
+  title: "Postcard",
   description: "A Next.js 13 Meta Threads application",
 };
 
@@ -30,7 +31,7 @@ export default function RootLayout({
       }}
     >
       <html lang='en'>
-        <body className={inter.className}>
+        <body className={`${inter.className} ${outfit.variable}`}>
           <Topbar />
 
           <main className='flex flex-row'>

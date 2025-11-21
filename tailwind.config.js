@@ -172,6 +172,9 @@ module.exports = {
       ],
     },
     extend: {
+      fontFamily: {
+        outfit: ["var(--font-outfit)"],
+      },
       colors: {
         "primary-500": "#877EFF",
         "secondary-500": "#FFB620",

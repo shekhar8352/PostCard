@@ -3,12 +3,14 @@ import { dark } from "@clerk/themes";
 import Image from "next/image";
 import Link from "next/link";
 
+import { outfit } from "@/app/(root)/layout";
+
 function Topbar() {
   return (
     <nav className='topbar'>
       <Link href='/' className='flex items-center gap-4'>
-        <Image src='/logo.svg' alt='logo' width={28} height={28} />
-        <p className='text-heading3-bold text-light-1 max-xs:hidden'>PostCard</p>
+        <Image src='/assets/logo_new.svg' alt='logo' width={28} height={28} />
+        <p className={`${outfit.className} text-heading3-bold text-light-1 max-xs:hidden tracking-normal font-bold`}>Postcard</p>
       </Link>
 
       <div className='flex items-center gap-1'>
