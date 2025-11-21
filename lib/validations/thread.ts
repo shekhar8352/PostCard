@@ -2,7 +2,7 @@ import * as z from "zod";
 
 export const ThreadValidation = z.object({
   thread: z.string().nonempty().min(3, { message: "Minimum 3 characters." }).refine((val) => {
-    const tags = val.match(/#[a-z0-9_]+/g);
+    const tags = val.match(/#[a-zA-Z0-9_]+/g);
     if (tags) {
       return tags.every((tag) => tag.length <= 30);
     }

@@ -111,7 +111,7 @@ export async function createThread({ text, author, communityId, path, mentionedU
       : [];
 
     // Extract hashtags from text
-    const tags = text.match(/#[a-z0-9_]+/g);
+    const tags = text.match(/#[a-zA-Z0-9_]+/g);
     const uniqueTags = tags ? Array.from(new Set(tags)) : [];
 
     const createdThread = await Thread.create({
