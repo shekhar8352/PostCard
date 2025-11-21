@@ -66,9 +66,45 @@ export async function fetchPostsByTag(tag: string, pageNumber = 1, pageSize = 20
 
         const posts = await postsQuery.exec();
 
+        const serializedPosts = posts.map((post: any) => ({
+            _id: post._id.toString(),
+            text: post.text,
+            author: {
+                _id: post.author._id.toString(),
+                id: post.author.id,
+                name: post.author.name,
+                image: post.author.image,
+            },
+            community: post.community
+                ? {
+                    _id: post.community._id.toString(),
+                    id: post.community.id,
+                    name: post.community.name,
+                    image: post.community.image,
+                }
+                : null,
+            createdAt: post.createdAt,
+            parentId: post.parentId,
+            mentionedUsers: post.mentionedUsers ? post.mentionedUsers.map((user: any) => ({
+                _id: user._id.toString(),
+                id: user.id,
+                username: user.username,
+                name: user.name,
+            })) : [],
+            children: post.children.map((child: any) => ({
+                _id: child._id.toString(),
+                author: {
+                    _id: child.author._id.toString(),
+                    name: child.author.name,
+                    image: child.author.image,
+                },
+            })),
+            likedBy: post.likedBy.map((id: any) => id.toString()),
+        }));
+
         const isNext = totalPostsCount > skipAmount + posts.length;
 
-        return { posts, isNext };
+        return { posts: serializedPosts, isNext };
     } catch (error: any) {
         throw new Error(`Failed to fetch posts by tag: ${error.message}`);
     }
