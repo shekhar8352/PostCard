@@ -7,6 +7,7 @@ import { connectToDB } from "../mongoose";
 import User from "../models/user.model";
 import Thread from "../models/thread.model";
 import Community from "../models/community.model";
+import Tag from "../models/tag.model";
 
 export async function fetchPosts(pageNumber = 1, pageSize = 20, userId?: string) {
   connectToDB();
@@ -54,11 +55,11 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20, userId?: string)
     },
     community: post.community
       ? {
-          _id: post.community._id.toString(),
-          id: post.community.id,
-          name: post.community.name,
-          image: post.community.image,
-        }
+        _id: post.community._id.toString(),
+        id: post.community.id,
+        name: post.community.name,
+        image: post.community.image,
+      }
       : null,
     createdAt: post.createdAt,
     parentId: post.parentId,
@@ -105,16 +106,32 @@ export async function createThread({ text, author, communityId, path, mentionedU
     );
 
     // Convert mentioned user IDs to ObjectIds
-    const mentionedUserObjectIds = mentionedUsers.length > 0 
+    const mentionedUserObjectIds = mentionedUsers.length > 0
       ? await User.find({ _id: { $in: mentionedUsers } }).select('_id')
       : [];
+
+    // Extract hashtags from text
+    const tags = text.match(/#[a-z0-9_]+/g);
+    const uniqueTags = tags ? Array.from(new Set(tags)) : [];
 
     const createdThread = await Thread.create({
       text,
       author,
       community: communityIdObject, // Assign communityId if provided, or leave it null for personal account
       mentionedUsers: mentionedUserObjectIds.map((user: any) => user._id),
+      tags: uniqueTags,
     });
+
+    // Update Tag model
+    if (uniqueTags.length > 0) {
+      for (const tag of uniqueTags) {
+        await Tag.findOneAndUpdate(
+          { name: tag },
+          { $push: { threads: createdThread._id } },
+          { upsert: true }
+        );
+      }
+    }
 
     // Update User model
     await User.findByIdAndUpdate(author, {
@@ -193,6 +210,12 @@ export async function deleteThread(id: string, path: string): Promise<void> {
     // Update Community model
     await Community.updateMany(
       { _id: { $in: Array.from(uniqueCommunityIds) } },
+      { $pull: { threads: { $in: descendantThreadIds } } }
+    );
+
+    // Update Tag model
+    await Tag.updateMany(
+      { threads: { $in: descendantThreadIds } },
       { $pull: { threads: { $in: descendantThreadIds } } }
     );
 
@@ -337,7 +360,7 @@ export async function addCommentToThread(
     }
 
     // Convert mentioned user IDs to ObjectIds
-    const mentionedUserObjectIds = mentionedUsers.length > 0 
+    const mentionedUserObjectIds = mentionedUsers.length > 0
       ? await User.find({ _id: { $in: mentionedUsers } }).select('_id')
       : [];
 

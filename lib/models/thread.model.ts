@@ -41,6 +41,11 @@ const threadSchema = new mongoose.Schema({
       default: [],
     },
   ],
+  tags: [
+    {
+      type: String,
+    },
+  ],
 });
 
 // Ensure `likedBy` and `mentionedUsers` are always set, even in old docs
