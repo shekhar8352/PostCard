@@ -9,21 +9,29 @@ import Thread from "../models/thread.model";
 import Community from "../models/community.model";
 import Tag from "../models/tag.model";
 
-export async function fetchPosts(pageNumber = 1, pageSize = 20, userId?: string) {
+export async function fetchPosts(pageNumber = 1, pageSize = 20, userId: string = "") {
   connectToDB();
 
   const skipAmount = (pageNumber - 1) * pageSize;
 
-  // Base filter: only top-level posts, not authored by the current user
-  const filter: any = {
+  let userObjectId = null;
+  if (userId) {
+    const user = await User.findOne({ id: userId }, { _id: 1 });
+    if (user) {
+      userObjectId = user._id;
+    }
+  }
+
+  // Fetch posts from other users
+  const othersFilter: any = {
     parentId: { $in: [null, undefined] },
   };
 
-  if (userId) {
-    filter.author = { $ne: userId };
+  if (userObjectId) {
+    othersFilter.author = { $ne: userObjectId }; // Exclude current user using ObjectId
   }
 
-  const postsQuery = Thread.find(filter)
+  const othersPostsQuery = Thread.find(othersFilter)
     .sort({ createdAt: -1 })
     .skip(skipAmount)
     .limit(pageSize)
@@ -39,9 +47,37 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20, userId?: string)
       populate: { path: "author", model: User, select: "_id name parentId image" },
     });
 
-  const totalPostsCount = await Thread.countDocuments(filter);
+  const othersPosts = await othersPostsQuery.exec();
+  const totalPostsCount = await Thread.countDocuments(othersFilter);
 
-  const posts = await postsQuery.exec();
+  let posts = [...othersPosts];
+
+  // If it's the first page, fetch the user's latest 3 posts
+  if (pageNumber === 1 && userObjectId) {
+    const userPostsQuery = Thread.find({
+      parentId: { $in: [null, undefined] },
+      author: userObjectId
+    })
+      .sort({ createdAt: -1 })
+      .limit(3)
+      .populate("author")
+      .populate("community")
+      .populate({
+        path: "mentionedUsers",
+        model: User,
+        select: "_id id username name",
+      })
+      .populate({
+        path: "children",
+        populate: { path: "author", model: User, select: "_id name parentId image" },
+      });
+
+    const userPosts = await userPostsQuery.exec();
+    posts = [...userPosts, ...posts];
+  }
+
+  // Shuffle posts
+  posts = posts.sort(() => Math.random() - 0.5);
 
   // Serialize
   const serializedPosts = posts.map((post: any) => ({
@@ -80,7 +116,7 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20, userId?: string)
     likedBy: post.likedBy.map((id: any) => id.toString()),
   }));
 
-  const isNext = totalPostsCount > skipAmount + posts.length;
+  const isNext = totalPostsCount > skipAmount + othersPosts.length;
 
   return { posts: serializedPosts, isNext };
 }
