@@ -16,7 +16,14 @@ async function Page() {
     <>
       <h1 className='head-text'>Create Card</h1>
 
-      <PostThread userId={userInfo._id} />
+      <PostThread
+        userId={userInfo._id.toString()}
+        availableCommunities={userInfo.communities.map((community: any) => ({
+          id: community.id,
+          name: community.name,
+          image: community.image,
+        }))}
+      />
     </>
   );
 }

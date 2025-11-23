@@ -72,7 +72,7 @@ export async function fetchUserPosts(userId: string) {
       model: Thread,
       populate: [
         {
-          path: "community",
+          path: "communities",
           model: Community,
           select: "name id image _id", // Select the "name" and "_id" fields from the "Community" model
         },
@@ -107,12 +107,14 @@ export async function fetchUserPosts(userId: string) {
         name: thread.author.name,
         image: thread.author.image,
       },
-      community: thread.community ? {
-        _id: thread.community._id.toString(),
-        id: thread.community.id,
-        name: thread.community.name,
-        image: thread.community.image,
-      } : null,
+      communities: thread.communities
+        ? thread.communities.map((community: any) => ({
+          _id: community._id.toString(),
+          id: community.id,
+          name: community.name,
+          image: community.image,
+        }))
+        : [],
       createdAt: thread.createdAt,
       parentId: thread.parentId,
       mentionedUsers: thread.mentionedUsers ? thread.mentionedUsers.map((user: any) => ({

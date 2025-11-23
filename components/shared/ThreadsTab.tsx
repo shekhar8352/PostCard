@@ -18,11 +18,11 @@ interface Result {
       image: string;
       id: string;
     };
-    community: {
+    communities: {
       id: string;
       name: string;
       image: string;
-    } | null;
+    }[] | null;
     createdAt: string;
     children: {
       author: {
@@ -78,16 +78,12 @@ async function ThreadsTab({ currentUserId, accountId, accountType }: Props) {
             accountType === "User"
               ? { name: validResult.name, image: validResult.image, id: validResult.id }
               : {
-                  name: thread.author.name,
-                  image: thread.author.image,
-                  id: thread.author.id,
-                }
+                name: thread.author.name,
+                image: thread.author.image,
+                id: thread.author.id,
+              }
           }
-          community={
-            accountType === "Community"
-              ? { name: validResult.name, id: validResult.id, image: validResult.image }
-              : thread.community
-          }
+          communities={thread.communities}
           createdAt={thread.createdAt}
           comments={thread.children}
           likedBy={thread.likedBy}

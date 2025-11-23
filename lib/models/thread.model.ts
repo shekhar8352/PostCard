@@ -10,10 +10,12 @@ const threadSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  community: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Community",
-  },
+  communities: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Community",
+    },
+  ],
   createdAt: {
     type: Date,
     default: Date.now,
@@ -59,7 +61,11 @@ threadSchema.pre("save", function (next) {
   next();
 });
 
-const Thread =
-  mongoose.models.Thread || mongoose.model("Thread", threadSchema);
+// Check if the model exists and if it has the new 'communities' field
+if (mongoose.models.Thread && !mongoose.models.Thread.schema.paths.communities) {
+  delete mongoose.models.Thread;
+}
+
+const Thread = mongoose.models.Thread || mongoose.model("Thread", threadSchema);
 
 export default Thread;

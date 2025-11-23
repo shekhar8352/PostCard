@@ -84,6 +84,11 @@ export async function fetchCommunityPosts(id: string) {
           select: "name image id", // Select the "name" and "_id" fields from the "User" model
         },
         {
+          path: "communities",
+          model: Community,
+          select: "name id image _id",
+        },
+        {
           path: "children",
           model: Thread,
           populate: {
@@ -109,12 +114,14 @@ export async function fetchCommunityPosts(id: string) {
         name: thread.author.name,
         image: thread.author.image,
       },
-      community: {
-        _id: communityPosts._id.toString(),
-        id: communityPosts.id,
-        name: communityPosts.name,
-        image: communityPosts.image,
-      },
+      communities: thread.communities
+        ? thread.communities.map((community: any) => ({
+          _id: community._id.toString(),
+          id: community.id,
+          name: community.name,
+          image: community.image,
+        }))
+        : [],
       createdAt: thread.createdAt,
       parentId: thread.parentId,
       children: thread.children.map((child: any) => ({
@@ -322,7 +329,11 @@ export async function deleteCommunity(communityId: string) {
     }
 
     // Delete all threads associated with the community
-    await Thread.deleteMany({ community: communityId });
+    // Delete all threads associated with the community
+    await Thread.updateMany(
+      { communities: communityId },
+      { $pull: { communities: communityId } }
+    );
 
     // Find all users who are part of the community
     const communityUsers = await User.find({ communities: communityId });

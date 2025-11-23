@@ -33,7 +33,7 @@ async function page({ params }: { params: { id: string } }) {
           parentId={thread.parentId}
           content={thread.text}
           author={thread.author}
-          community={thread.community}
+          communities={thread.communities}
           createdAt={thread.createdAt}
           comments={thread.children}
           likedBy={thread.likedBy}
@@ -58,7 +58,7 @@ async function page({ params }: { params: { id: string } }) {
             parentId={childItem.parentId}
             content={childItem.text}
             author={childItem.author}
-            community={childItem.community}
+            communities={childItem.communities}
             createdAt={childItem.createdAt}
             comments={childItem.children}
             likedBy={childItem.likedBy}

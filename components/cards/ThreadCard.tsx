@@ -19,11 +19,11 @@ interface Props {
     image: string;
     id: string;
   };
-  community: {
+  communities: {
     id: string;
     name: string;
     image: string;
-  } | null;
+  }[] | null;
   createdAt: string;
   comments: {
     author: {
@@ -46,7 +46,7 @@ function ThreadCard({
   parentId,
   content,
   author,
-  community,
+  communities,
   createdAt,
   comments,
   likedBy,
@@ -69,13 +69,13 @@ function ThreadCard({
         console.error("Error checking like status:", error);
       }
     };
-    
+
     checkLikeStatus();
   }, [id, currentUserId]);
 
   const handleLike = async () => {
     if (isLiking) return; // Prevent multiple clicks
-    
+
     setIsLiking(true);
     try {
       const result = await likeThread(id, currentUserId);
@@ -94,9 +94,8 @@ function ThreadCard({
 
   return (
     <article
-      className={`flex w-full flex-col rounded-xl ${
-        isComment ? "px-0 xs:px-7" : "bg-dark-2 p-7"
-      }`}
+      className={`flex w-full flex-col rounded-xl ${isComment ? "px-0 xs:px-7" : "bg-dark-2 p-7"
+        }`}
     >
       <div className="flex items-start justify-between">
         <div className="flex w-full flex-1 flex-row gap-4">
@@ -107,6 +106,7 @@ function ThreadCard({
                 alt="user_community_image"
                 fill
                 className="cursor-pointer rounded-full"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
             </Link>
 
@@ -125,9 +125,8 @@ function ThreadCard({
             </div>
 
             <div
-              className={`${
-                isComment ? "mb-10" : ""
-              } mt-5 flex flex-col gap-3`}
+              className={`${isComment ? "mb-10" : ""
+                } mt-5 flex flex-col gap-3`}
             >
               <div className="flex items-center justify-between">
                 {/* Left: icons */}
@@ -197,24 +196,33 @@ function ThreadCard({
         </div>
       )}
 
-      {!isComment && community && (
-        <Link
-          href={`/communities/${community.id}`}
-          className="mt-5 flex items-center"
-        >
+      {!isComment && communities && communities.length > 0 && (
+        <div className="mt-5 flex items-center flex-wrap gap-1">
           <p className="text-subtle-medium text-gray-1">
-            {formatDateString(createdAt)}
-            {community && ` - ${community.name} Community`}
+            {formatDateString(createdAt)} -{" "}
           </p>
-
-          <Image
-            src={community.image}
-            alt={community.name}
-            width={14}
-            height={14}
-            className="ml-1 rounded-full object-cover"
-          />
-        </Link>
+          {communities.map((community, index) => (
+            <Link
+              key={community.id}
+              href={`/communities/${community.id}`}
+              className="flex items-center hover:underline"
+            >
+              <p className="text-subtle-medium text-gray-1">
+                {community.name}
+                {index < communities.length - 1 && ", "}
+              </p>
+              {index === 0 && (
+                <Image
+                  src={community.image}
+                  alt={community.name}
+                  width={14}
+                  height={14}
+                  className="ml-1 rounded-full object-cover"
+                />
+              )}
+            </Link>
+          ))}
+        </div>
       )}
     </article>
   );

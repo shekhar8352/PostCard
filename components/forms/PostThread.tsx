@@ -32,15 +32,21 @@ interface MentionUser {
 
 interface Props {
   userId: string;
+  availableCommunities: {
+    id: string;
+    name: string;
+    image: string;
+  }[];
 }
 
-function PostThread({ userId }: Props) {
+function PostThread({ userId, availableCommunities }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const { organization } = useOrganization();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mentionedUsers, setMentionedUsers] = useState<MentionUser[]>([]);
+  const [selectedCommunityIds, setSelectedCommunityIds] = useState<string[]>([]);
+  const [postType, setPostType] = useState<'public' | 'community'>('public');
 
   const form = useForm<z.infer<typeof ThreadValidation>>({
     resolver: zodResolver(ThreadValidation),
@@ -56,13 +62,38 @@ function PostThread({ userId }: Props) {
     form.setValue('mentionedUsers', users.map(user => user._id));
   };
 
+  const handlePostTypeChange = (type: 'public' | 'community') => {
+    setPostType(type);
+    if (type === 'public') {
+      setSelectedCommunityIds([]);
+    }
+  };
+
+  const handleCommunityToggle = (communityId: string) => {
+    setSelectedCommunityIds((prev) =>
+      prev.includes(communityId)
+        ? prev.filter((id) => id !== communityId)
+        : [...prev, communityId]
+    );
+  };
+
   const onSubmit = async (values: z.infer<typeof ThreadValidation>) => {
     setIsSubmitting(true);
     try {
+      if (postType === 'community' && selectedCommunityIds.length === 0) {
+        // You might want to show an error here or just return
+        // For now, let's just not submit if community is selected but no community chosen
+        // Or we could default to public if none selected, but explicit is better.
+        // Ideally show a toast or form error.
+        console.error("Please select at least one community");
+        setIsSubmitting(false);
+        return;
+      }
+
       await createThread({
         text: values.thread,
         author: userId,
-        communityId: organization ? organization.id : null,
+        communityIds: selectedCommunityIds,
         path: pathname,
         mentionedUsers: mentionedUsers.map(user => user._id),
       });
@@ -102,6 +133,68 @@ function PostThread({ userId }: Props) {
             </FormItem>
           )}
         />
+
+        <div className="flex flex-col gap-3">
+          <label className="text-base-semibold text-light-2">
+            Where do you want to post?
+          </label>
+
+          <div className="flex gap-4 p-1 bg-dark-3 rounded-lg w-fit">
+            <button
+              type="button"
+              onClick={() => handlePostTypeChange('public')}
+              className={`px-6 py-2 rounded-md text-small-medium transition-all ${postType === 'public'
+                  ? 'bg-primary-500 text-light-1 shadow-sm'
+                  : 'text-light-2 hover:text-light-1'
+                }`}
+            >
+              Public
+            </button>
+            <button
+              type="button"
+              onClick={() => handlePostTypeChange('community')}
+              className={`px-6 py-2 rounded-md text-small-medium transition-all ${postType === 'community'
+                  ? 'bg-primary-500 text-light-1 shadow-sm'
+                  : 'text-light-2 hover:text-light-1'
+                }`}
+            >
+              Community
+            </button>
+          </div>
+
+          {postType === 'community' && (
+            <div className="mt-2 flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+              <label className="text-small-medium text-light-2">
+                Select Communities
+              </label>
+              <div className="flex flex-wrap gap-3">
+                {availableCommunities.length === 0 ? (
+                  <p className="text-subtle-medium text-gray-1">
+                    You are not part of any communities yet.
+                  </p>
+                ) : (
+                  availableCommunities.map((community) => (
+                    <div
+                      key={community.id}
+                      className={`cursor-pointer rounded-lg px-4 py-2 border transition-all ${selectedCommunityIds.includes(community.id)
+                          ? "bg-primary-500 border-primary-500 text-light-1"
+                          : "bg-dark-3 border-dark-4 text-light-2 hover:border-gray-1"
+                        }`}
+                      onClick={() => handleCommunityToggle(community.id)}
+                    >
+                      {community.name}
+                    </div>
+                  ))
+                )}
+              </div>
+              {selectedCommunityIds.length === 0 && (
+                <p className="text-tiny-medium text-red-500">
+                  * Please select at least one community
+                </p>
+              )}
+            </div>
+          )}
+        </div>
 
         <Button
           type="submit"

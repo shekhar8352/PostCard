@@ -47,7 +47,7 @@ const Feed = ({ initialPosts, userId, communityId }: Props) => {
                             parentId={post.parentId}
                             content={post.text}
                             author={post.author}
-                            community={post.community}
+                            communities={post.communities}
                             createdAt={post.createdAt}
                             comments={post.children}
                             likedBy={post.likedBy}

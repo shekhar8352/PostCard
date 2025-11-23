@@ -23,7 +23,7 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20, userId: string =
     if (!community) {
       return { posts: [], isNext: false };
     }
-    query.community = community._id;
+    query.communities = community._id;
   } else {
     // Personal feed logic
     let userObjectId = null;
@@ -44,7 +44,7 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20, userId: string =
     .skip(skipAmount)
     .limit(pageSize)
     .populate("author")
-    .populate("community")
+    .populate("communities")
     .populate({
       path: "mentionedUsers",
       model: User,
@@ -71,7 +71,7 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20, userId: string =
         .sort({ createdAt: -1 })
         .limit(3)
         .populate("author")
-        .populate("community")
+        .populate("communities")
         .populate({
           path: "mentionedUsers",
           model: User,
@@ -102,14 +102,14 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20, userId: string =
       name: post.author.name,
       image: post.author.image,
     },
-    community: post.community
-      ? {
-        _id: post.community._id.toString(),
-        id: post.community.id,
-        name: post.community.name,
-        image: post.community.image,
-      }
-      : null,
+    communities: post.communities
+      ? post.communities.map((community: any) => ({
+        _id: community._id.toString(),
+        id: community.id,
+        name: community.name,
+        image: community.image,
+      }))
+      : [],
     createdAt: post.createdAt,
     parentId: post.parentId,
     mentionedUsers: post.mentionedUsers ? post.mentionedUsers.map((user: any) => ({
@@ -139,18 +139,18 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20, userId: string =
 interface Params {
   text: string,
   author: string,
-  communityId: string | null,
+  communityIds: string[],
   path: string,
   mentionedUsers?: string[],
 }
 
-export async function createThread({ text, author, communityId, path, mentionedUsers = [] }: Params
+export async function createThread({ text, author, communityIds, path, mentionedUsers = [] }: Params
 ) {
   try {
     connectToDB();
 
-    const communityIdObject = await Community.findOne(
-      { id: communityId },
+    const communityObjects = await Community.find(
+      { id: { $in: communityIds } },
       { _id: 1 }
     );
 
@@ -166,7 +166,7 @@ export async function createThread({ text, author, communityId, path, mentionedU
     const createdThread = await Thread.create({
       text,
       author,
-      community: communityIdObject, // Assign communityId if provided, or leave it null for personal account
+      communities: communityObjects.map((community: any) => community._id),
       mentionedUsers: mentionedUserObjectIds.map((user: any) => user._id),
       tags: uniqueTags,
     });
@@ -187,11 +187,12 @@ export async function createThread({ text, author, communityId, path, mentionedU
       $push: { threads: createdThread._id },
     });
 
-    if (communityIdObject) {
-      // Update Community model
-      await Community.findByIdAndUpdate(communityIdObject, {
-        $push: { threads: createdThread._id },
-      });
+    // Update Community models
+    if (communityObjects.length > 0) {
+      await Community.updateMany(
+        { _id: { $in: communityObjects.map((c: any) => c._id) } },
+        { $push: { threads: createdThread._id } }
+      );
     }
 
     revalidatePath(path);
@@ -242,8 +243,8 @@ export async function deleteThread(id: string, path: string): Promise<void> {
 
     const uniqueCommunityIds = new Set(
       [
-        ...descendantThreads.map((thread) => thread.community?._id?.toString()), // Use optional chaining to handle possible undefined values
-        mainThread.community?._id?.toString(),
+        ...descendantThreads.flatMap((thread) => thread.communities?.map((c: any) => c._id?.toString()) || []),
+        ...(mainThread.communities?.map((c: any) => c._id?.toString()) || []),
       ].filter((id) => id !== undefined)
     );
 
@@ -285,7 +286,7 @@ export async function fetchThreadById(threadId: string) {
         select: "_id id name image",
       }) // Populate the author field with _id and username
       .populate({
-        path: "community",
+        path: "communities",
         model: Community,
         select: "_id id name image",
       }) // Populate the community field with _id and name
@@ -334,12 +335,14 @@ export async function fetchThreadById(threadId: string) {
         name: thread.author.name,
         image: thread.author.image,
       },
-      community: thread.community ? {
-        _id: thread.community._id.toString(),
-        id: thread.community.id,
-        name: thread.community.name,
-        image: thread.community.image,
-      } : null,
+      communities: thread.communities
+        ? thread.communities.map((community: any) => ({
+          _id: community._id.toString(),
+          id: community.id,
+          name: community.name,
+          image: community.image,
+        }))
+        : [],
       createdAt: thread.createdAt,
       parentId: thread.parentId,
       mentionedUsers: thread.mentionedUsers ? thread.mentionedUsers.map((user: any) => ({
@@ -357,12 +360,14 @@ export async function fetchThreadById(threadId: string) {
           name: child.author.name,
           image: child.author.image,
         },
-        community: child.community ? {
-          _id: child.community._id.toString(),
-          id: child.community.id,
-          name: child.community.name,
-          image: child.community.image,
-        } : null,
+        communities: child.communities
+          ? child.communities.map((community: any) => ({
+            _id: community._id.toString(),
+            id: community.id,
+            name: community.name,
+            image: community.image,
+          }))
+          : [],
         createdAt: child.createdAt,
         parentId: child.parentId,
         mentionedUsers: child.mentionedUsers ? child.mentionedUsers.map((user: any) => ({
