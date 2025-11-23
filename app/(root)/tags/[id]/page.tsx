@@ -37,7 +37,7 @@ async function Page({
                                 parentId={post.parentId}
                                 content={post.text}
                                 author={post.author}
-                                community={post.community}
+                                communities={post.communities}
                                 createdAt={post.createdAt}
                                 comments={post.children}
                                 likedBy={post.likedBy}

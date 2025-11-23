@@ -48,7 +48,7 @@ export async function fetchPostsByTag(tag: string, pageNumber = 1, pageSize = 20
                 model: User,
             })
             .populate({
-                path: "community",
+                path: "communities",
                 model: Community,
             })
             .populate({
@@ -75,14 +75,14 @@ export async function fetchPostsByTag(tag: string, pageNumber = 1, pageSize = 20
                 name: post.author.name,
                 image: post.author.image,
             },
-            community: post.community
-                ? {
-                    _id: post.community._id.toString(),
-                    id: post.community.id,
-                    name: post.community.name,
-                    image: post.community.image,
-                }
-                : null,
+            communities: post.communities
+                ? post.communities.map((community: any) => ({
+                    _id: community._id.toString(),
+                    id: community.id,
+                    name: community.name,
+                    image: community.image,
+                }))
+                : [],
             createdAt: post.createdAt,
             parentId: post.parentId,
             mentionedUsers: post.mentionedUsers ? post.mentionedUsers.map((user: any) => ({
