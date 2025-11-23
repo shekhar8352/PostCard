@@ -28,6 +28,7 @@ async function Home({
       <h1 className='head-text text-left'>Home</h1>
 
       <Feed
+        key={orgId || "personal"}
         initialPosts={result.posts}
         userId={user.id}
         communityId={orgId || ""}
