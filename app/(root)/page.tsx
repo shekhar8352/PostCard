@@ -1,6 +1,6 @@
 // import { UserButton } from "@clerk/nextjs";
 
-import { currentUser } from "@clerk/nextjs";
+import { currentUser, auth } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 
 import Feed from "@/components/shared/Feed";
@@ -16,13 +16,12 @@ async function Home({
   const user = await currentUser();
   if (!user) return null;
 
-
   const userInfo = await fetchUser(user.id);
   if (!userInfo?.onboarded) redirect("/onboarding");
 
-  console.log("user", userInfo);
+  const { orgId } = auth();
 
-  const result = await fetchPosts(1, 30, user.id);
+  const result = await fetchPosts(1, 30, user.id, orgId || "");
 
   return (
     <>
@@ -31,6 +30,7 @@ async function Home({
       <Feed
         initialPosts={result.posts}
         userId={user.id}
+        communityId={orgId || ""}
       />
     </>
   );

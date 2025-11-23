@@ -6,7 +6,7 @@ import Thread from "../models/thread.model";
 import User from "../models/user.model";
 import Community from "../models/community.model";
 
-export async function fetchTrendingTags() {
+export async function fetchTrendingTags(limit = 10) {
     connectToDB();
 
     try {
@@ -18,7 +18,7 @@ export async function fetchTrendingTags() {
                 },
             },
             { $sort: { threadCount: -1 } },
-            { $limit: 10 },
+            { $limit: limit },
         ]);
 
         return tags;

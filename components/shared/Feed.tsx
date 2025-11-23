@@ -9,9 +9,10 @@ import Image from "next/image";
 interface Props {
     initialPosts: any[];
     userId: string;
+    communityId?: string;
 }
 
-const Feed = ({ initialPosts, userId }: Props) => {
+const Feed = ({ initialPosts, userId, communityId }: Props) => {
     const [posts, setPosts] = useState<any[]>(initialPosts);
     const [page, setPage] = useState(1);
     const [isNext, setIsNext] = useState(true);
@@ -25,7 +26,7 @@ const Feed = ({ initialPosts, userId }: Props) => {
 
     const loadMorePosts = async () => {
         const nextPage = page + 1;
-        const result = await fetchPosts(nextPage, 30, userId);
+        const result = await fetchPosts(nextPage, 30, userId, communityId);
 
         setPosts((prev) => [...prev, ...result.posts]);
         setPage(nextPage);

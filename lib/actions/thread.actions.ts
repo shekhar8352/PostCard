@@ -9,29 +9,37 @@ import Thread from "../models/thread.model";
 import Community from "../models/community.model";
 import Tag from "../models/tag.model";
 
-export async function fetchPosts(pageNumber = 1, pageSize = 20, userId: string = "") {
+export async function fetchPosts(pageNumber = 1, pageSize = 20, userId: string = "", communityId: string = "") {
   connectToDB();
 
   const skipAmount = (pageNumber - 1) * pageSize;
 
-  let userObjectId = null;
-  if (userId) {
-    const user = await User.findOne({ id: userId }, { _id: 1 });
-    if (user) {
-      userObjectId = user._id;
-    }
-  }
-
-  // Fetch posts from other users
-  const othersFilter: any = {
+  let query: any = {
     parentId: { $in: [null, undefined] },
   };
 
-  if (userObjectId) {
-    othersFilter.author = { $ne: userObjectId }; // Exclude current user using ObjectId
+  if (communityId) {
+    const community = await Community.findOne({ id: communityId });
+    if (!community) {
+      return { posts: [], isNext: false };
+    }
+    query.community = community._id;
+  } else {
+    // Personal feed logic
+    let userObjectId = null;
+    if (userId) {
+      const user = await User.findOne({ id: userId }, { _id: 1 });
+      if (user) {
+        userObjectId = user._id;
+      }
+    }
+
+    if (userObjectId) {
+      query.author = { $ne: userObjectId }; // Exclude current user using ObjectId
+    }
   }
 
-  const othersPostsQuery = Thread.find(othersFilter)
+  const postsQuery = Thread.find(query)
     .sort({ createdAt: -1 })
     .skip(skipAmount)
     .limit(pageSize)
@@ -47,40 +55,45 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20, userId: string =
       populate: { path: "author", model: User, select: "_id name parentId image" },
     });
 
-  const othersPosts = await othersPostsQuery.exec();
-  const totalPostsCount = await Thread.countDocuments(othersFilter);
+  const posts = await postsQuery.exec();
+  const totalPostsCount = await Thread.countDocuments(query);
 
-  let posts = [...othersPosts];
+  let finalPosts = [...posts];
 
-  // If it's the first page, fetch the user's latest 3 posts
-  if (pageNumber === 1 && userObjectId) {
-    const userPostsQuery = Thread.find({
-      parentId: { $in: [null, undefined] },
-      author: userObjectId
-    })
-      .sort({ createdAt: -1 })
-      .limit(3)
-      .populate("author")
-      .populate("community")
-      .populate({
-        path: "mentionedUsers",
-        model: User,
-        select: "_id id username name",
+  // If it's the first page and no community is selected, fetch the user's latest 3 posts
+  if (!communityId && pageNumber === 1 && userId) {
+    const user = await User.findOne({ id: userId }, { _id: 1 });
+    if (user) {
+      const userPostsQuery = Thread.find({
+        parentId: { $in: [null, undefined] },
+        author: user._id
       })
-      .populate({
-        path: "children",
-        populate: { path: "author", model: User, select: "_id name parentId image" },
-      });
+        .sort({ createdAt: -1 })
+        .limit(3)
+        .populate("author")
+        .populate("community")
+        .populate({
+          path: "mentionedUsers",
+          model: User,
+          select: "_id id username name",
+        })
+        .populate({
+          path: "children",
+          populate: { path: "author", model: User, select: "_id name parentId image" },
+        });
 
-    const userPosts = await userPostsQuery.exec();
-    posts = [...userPosts, ...posts];
+      const userPosts = await userPostsQuery.exec();
+      finalPosts = [...userPosts, ...finalPosts];
+    }
   }
 
-  // Shuffle posts
-  posts = posts.sort(() => Math.random() - 0.5);
+  // Shuffle posts only for personal feed (when no community is selected)
+  if (!communityId) {
+    finalPosts = finalPosts.sort(() => Math.random() - 0.5);
+  }
 
   // Serialize
-  const serializedPosts = posts.map((post: any) => ({
+  const serializedPosts = finalPosts.map((post: any) => ({
     _id: post._id.toString(),
     text: post.text,
     author: {
@@ -116,7 +129,7 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20, userId: string =
     likedBy: post.likedBy.map((id: any) => id.toString()),
   }));
 
-  const isNext = totalPostsCount > skipAmount + othersPosts.length;
+  const isNext = totalPostsCount > skipAmount + posts.length;
 
   return { posts: serializedPosts, isNext };
 }
