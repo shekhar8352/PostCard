@@ -120,7 +120,7 @@ function ThreadCard({
               </h4>
             </Link>
 
-            <div className="mt-2 text-small-regular text-light-2">
+            <div className="mt-2 text-small-regular text-light-2 whitespace-pre-wrap">
               <MentionRenderer content={content} mentionedUsers={mentionedUsers} />
             </div>
 

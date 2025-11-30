@@ -114,24 +114,41 @@ function PostThread({ userId, availableCommunities }: Props) {
         <FormField
           control={form.control}
           name="thread"
-          render={({ field }) => (
-            <FormItem className="flex w-full flex-col gap-3">
-              <FormLabel className="text-base-semibold text-light-2">
-                Content
-              </FormLabel>
-              <FormControl className="no-focus border border-dark-4 bg-dark-3 text-light-1 w-full">
-                <UserMention
-                  value={field.value}
-                  onChange={field.onChange}
-                  onMentionSelect={handleMentionSelect}
-                  placeholder="What's on your mind? Use @ to mention users..."
-                  className="no-focus border-none bg-transparent text-light-1 resize-none p-3 w-full min-h-[300px]"
-                  rows={15}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          render={({ field }) => {
+            const charCount = field.value?.length || 0;
+            const isOverLimit = charCount > 1000;
+
+            return (
+              <FormItem className="flex w-full flex-col gap-3">
+                <FormLabel className="text-base-semibold text-light-2">
+                  Content
+                </FormLabel>
+                <FormControl className="no-focus border border-dark-4 bg-dark-3 text-light-1 w-full">
+                  <UserMention
+                    value={field.value}
+                    onChange={field.onChange}
+                    onMentionSelect={handleMentionSelect}
+                    placeholder="What's on your mind? Use @ to mention users..."
+                    className="no-focus border-none bg-transparent text-light-1 resize-none p-3 w-full min-h-[300px]"
+                    rows={15}
+                  />
+                </FormControl>
+                <div className="flex justify-between items-center">
+                  <FormMessage />
+                  <p className={`text-small-regular font-semibold ${isOverLimit ? 'text-red-500' : 'text-gray-1'}`}>
+                    {charCount} / 1000
+                  </p>
+                </div>
+                {isOverLimit && (
+                  <div className="bg-red-500/10 border border-red-500 rounded-md p-3">
+                    <p className="text-small-regular text-red-500">
+                      ⚠️ Character limit exceeded! Please reduce your content by {charCount - 1000} characters.
+                    </p>
+                  </div>
+                )}
+              </FormItem>
+            );
+          }}
         />
 
         <div className="flex flex-col gap-3">
@@ -144,8 +161,8 @@ function PostThread({ userId, availableCommunities }: Props) {
               type="button"
               onClick={() => handlePostTypeChange('public')}
               className={`px-6 py-2 rounded-md text-small-medium transition-all ${postType === 'public'
-                  ? 'bg-primary-500 text-light-1 shadow-sm'
-                  : 'text-light-2 hover:text-light-1'
+                ? 'bg-primary-500 text-light-1 shadow-sm'
+                : 'text-light-2 hover:text-light-1'
                 }`}
             >
               Public
@@ -154,8 +171,8 @@ function PostThread({ userId, availableCommunities }: Props) {
               type="button"
               onClick={() => handlePostTypeChange('community')}
               className={`px-6 py-2 rounded-md text-small-medium transition-all ${postType === 'community'
-                  ? 'bg-primary-500 text-light-1 shadow-sm'
-                  : 'text-light-2 hover:text-light-1'
+                ? 'bg-primary-500 text-light-1 shadow-sm'
+                : 'text-light-2 hover:text-light-1'
                 }`}
             >
               Community
@@ -177,8 +194,8 @@ function PostThread({ userId, availableCommunities }: Props) {
                     <div
                       key={community.id}
                       className={`cursor-pointer rounded-lg px-4 py-2 border transition-all ${selectedCommunityIds.includes(community.id)
-                          ? "bg-primary-500 border-primary-500 text-light-1"
-                          : "bg-dark-3 border-dark-4 text-light-2 hover:border-gray-1"
+                        ? "bg-primary-500 border-primary-500 text-light-1"
+                        : "bg-dark-3 border-dark-4 text-light-2 hover:border-gray-1"
                         }`}
                       onClick={() => handleCommunityToggle(community.id)}
                     >
