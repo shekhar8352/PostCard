@@ -208,10 +208,16 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: 0 },
         },
+        "loading-bar": {
+          "0%": { transform: "scaleX(0)" },
+          "50%": { transform: "scaleX(0.5)" },
+          "100%": { transform: "scaleX(0.95)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "loading-bar": "loading-bar 2s ease-out forwards",
       },
     },
   },

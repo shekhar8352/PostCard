@@ -10,6 +10,7 @@ import LeftSidebar from "@/components/shared/LeftSidebar";
 import Bottombar from "@/components/shared/Bottombar";
 import RightSidebar from "@/components/shared/RightSidebar";
 import Topbar from "@/components/shared/Topbar";
+import LoadingBar from "@/components/shared/LoadingBar";
 
 const inter = Inter({ subsets: ["latin"] });
 export const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
@@ -32,6 +33,7 @@ export default function RootLayout({
     >
       <html lang='en'>
         <body className={`${inter.className} ${outfit.variable}`}>
+          <LoadingBar />
           <Topbar />
 
           <main className='flex flex-row'>
@@ -41,7 +43,9 @@ export default function RootLayout({
               <Analytics />
             </section>
             {/* @ts-ignore */}
-            <RightSidebar />
+            <React.Suspense fallback={null}>
+              <RightSidebar />
+            </React.Suspense>
           </main>
 
           <Bottombar />

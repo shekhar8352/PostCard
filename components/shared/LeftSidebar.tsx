@@ -17,17 +17,17 @@ const LeftSidebar = () => {
     <section className='custom-scrollbar leftsidebar'>
       <div className='flex w-full flex-1 flex-col gap-6 px-6'>
         {sidebarLinks.map((link) => {
+          const route = link.route === "/profile" ? `/profile/${userId}` : link.route;
           const isActive =
-            (pathname.includes(link.route) && link.route.length > 1) ||
-            pathname === link.route;
-
-          if (link.route === "/profile") link.route = `${link.route}/${userId}`;
+            (pathname.includes(route) && route.length > 1) ||
+            pathname === route;
 
           return (
             <Link
-              href={link.route}
+              href={route}
               key={link.label}
               className={`leftsidebar_link ${isActive && "bg-primary-500 "}`}
+              prefetch={true}
             >
               <Image
                 src={link.imgURL}
