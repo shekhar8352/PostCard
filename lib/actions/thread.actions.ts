@@ -89,7 +89,27 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20, userId: string =
 
   // Shuffle posts only for personal feed (when no community is selected)
   if (!communityId) {
-    finalPosts = finalPosts.sort(() => Math.random() - 0.5);
+    const groupedPosts: { [key: string]: any[] } = {};
+
+    finalPosts.forEach((post) => {
+      const date = new Date(post.createdAt);
+      const dateKey = date.toISOString().split("T")[0]; // YYYY-MM-DD
+      if (!groupedPosts[dateKey]) {
+        groupedPosts[dateKey] = [];
+      }
+      groupedPosts[dateKey].push(post);
+    });
+
+    // Sort days descending
+    const sortedDays = Object.keys(groupedPosts).sort((a, b) => b.localeCompare(a));
+
+    finalPosts = [];
+    sortedDays.forEach((day) => {
+      const dayPosts = groupedPosts[day];
+      // Shuffle dayPosts
+      dayPosts.sort(() => Math.random() - 0.5);
+      finalPosts.push(...dayPosts);
+    });
   }
 
   // Serialize
