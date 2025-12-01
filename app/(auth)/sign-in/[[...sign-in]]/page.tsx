@@ -54,35 +54,40 @@ export default function Page() {
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-primary-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse" style={{ animationDelay: "2s" }}></div>
       </div>
 
-      <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between min-h-screen px-6 py-12 lg:px-12 gap-12">
+      <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between min-h-screen px-6 py-12 lg:px-12 gap-12 mt-8 lg:mt-12">
         {/* Left Side - Hero and Features */}
         <div className="flex-1 max-w-3xl">
           {/* Hero Section */}
           <div className={`transition-all duration-1000 mb-16 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
-            {/* Logo */}
-            <div className="flex justify-center lg:justify-start mb-8 animate-bounce" style={{ animationDuration: "3s" }}>
-              <div className="relative w-20 h-20 md:w-24 md:h-24">
-                <Image
-                  src="/assets/logo_new.svg"
-                  alt="Postcard Logo"
-                  width={96}
-                  height={96}
-                  className="w-full h-full"
-                />
+            <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-8">
+              {/* Logo */}
+              <div className="flex-shrink-0 animate-bounce" style={{ animationDuration: "3s" }}>
+                <div className="relative w-20 h-20 md:w-24 md:h-24">
+                  <Image
+                    src="/assets/logo_new.svg"
+                    alt="Postcard Logo"
+                    width={96}
+                    height={96}
+                    className="w-full h-full"
+                  />
+                </div>
+              </div>
+
+              {/* Text Content */}
+              <div className="flex-1">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-light-1 mb-6 font-outfit text-center lg:text-left">
+                  Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-500 to-secondary-500">Postcard</span>
+                </h1>
+
+                <p className="text-lg md:text-xl text-light-2 mb-4 text-center lg:text-left">
+                  A modern, vibrant social media platform built for communities and conversations.
+                </p>
+
+                <p className="text-base md:text-lg text-light-3 text-center lg:text-left">
+                  Share your thoughts, join communities, and engage in meaningful conversations with people who share your interests.
+                </p>
               </div>
             </div>
-
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-light-1 mb-6 font-outfit text-center lg:text-left">
-              Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-500 to-secondary-500">Postcard</span>
-            </h1>
-
-            <p className="text-lg md:text-xl text-light-2 mb-4 text-center lg:text-left">
-              A modern, vibrant social media platform built for communities and conversations.
-            </p>
-
-            <p className="text-base md:text-lg text-light-3 mb-12 text-center lg:text-left">
-              Share your thoughts, join communities, and engage in meaningful conversations with people who share your interests.
-            </p>
           </div>
 
           {/* Features Section */}
