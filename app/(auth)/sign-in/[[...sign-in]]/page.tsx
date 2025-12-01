@@ -15,7 +15,7 @@ export default function Page() {
   const features = [
     {
       icon: MessageSquare,
-      title: "Interactive Threads",
+      title: "Interactive Cards",
       description: "Create rich text posts, reply to others, and engage in deeply nested conversations.",
     },
     {
@@ -54,9 +54,9 @@ export default function Page() {
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-primary-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse" style={{ animationDelay: "2s" }}></div>
       </div>
 
-      <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between min-h-screen px-6 py-12 lg:px-12 gap-12 mt-8 lg:mt-12">
+      <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between min-h-screen px-6 pb-12 pt-24 lg:px-12 lg:pt-40 gap-12">
         {/* Left Side - Hero and Features */}
-        <div className="flex-1 max-w-3xl">
+        <div className="flex-1 max-w-3xl w-full order-1">
           {/* Hero Section */}
           <div className={`transition-all duration-1000 mb-16 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}>
             <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-8">
@@ -75,7 +75,7 @@ export default function Page() {
 
               {/* Text Content */}
               <div className="flex-1">
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-light-1 mb-6 font-outfit text-center lg:text-left">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-light-1 mb-6 font-outfit text-center lg:text-left">
                   Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-500 to-secondary-500">Postcard</span>
                 </h1>
 
@@ -90,8 +90,8 @@ export default function Page() {
             </div>
           </div>
 
-          {/* Features Section */}
-          <div>
+          {/* Features Section - Order 3 on mobile */}
+          <div className="order-3 lg:order-none">
             <div className="text-center lg:text-left mb-8">
               <div className="inline-flex items-center gap-2 mb-3">
                 <Sparkles className="w-5 h-5 text-primary-500" />
@@ -139,8 +139,8 @@ export default function Page() {
           </div>
         </div>
 
-        {/* Right Side - Sign In Modal */}
-        <div className="w-full lg:w-auto lg:flex-shrink-0">
+        {/* Right Side - Sign In Modal - Order 2 on mobile */}
+        <div className="w-full lg:w-auto lg:flex-shrink-0 order-2">
           <div className="w-full lg:w-[420px]">
             <div className="text-center mb-6">
               <h2 className="text-2xl md:text-3xl font-bold text-light-1 mb-3 font-outfit">
