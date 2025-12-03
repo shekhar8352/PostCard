@@ -10,7 +10,7 @@ import Community from "../models/community.model";
 import Tag from "../models/tag.model";
 
 export async function fetchPosts(pageNumber = 1, pageSize = 20, userId: string = "", communityId: string = "") {
-  connectToDB();
+  await connectToDB();
 
   const skipAmount = (pageNumber - 1) * pageSize;
 
@@ -167,7 +167,7 @@ interface Params {
 export async function createThread({ text, author, communityIds, path, mentionedUsers = [] }: Params
 ) {
   try {
-    connectToDB();
+    await connectToDB();
 
     const communityObjects = await Community.find(
       { id: { $in: communityIds } },
@@ -235,7 +235,7 @@ async function fetchAllChildThreads(threadId: string): Promise<any[]> {
 
 export async function deleteThread(id: string, path: string): Promise<void> {
   try {
-    connectToDB();
+    await connectToDB();
 
     // Find the thread to be deleted (the main thread)
     const mainThread = await Thread.findById(id).populate("author community");
@@ -296,7 +296,7 @@ export async function deleteThread(id: string, path: string): Promise<void> {
 }
 
 export async function fetchThreadById(threadId: string) {
-  connectToDB();
+  await connectToDB();
 
   try {
     const thread = await Thread.findById(threadId)
@@ -423,7 +423,7 @@ export async function addCommentToThread(
   path: string,
   mentionedUsers: string[] = []
 ) {
-  connectToDB();
+  await connectToDB();
 
   try {
     // Find the original thread by its ID

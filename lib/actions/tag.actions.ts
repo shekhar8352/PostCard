@@ -7,7 +7,7 @@ import User from "../models/user.model";
 import Community from "../models/community.model";
 
 export async function fetchTrendingTags(limit = 10) {
-    connectToDB();
+    await connectToDB();
 
     try {
         const tags = await Tag.aggregate([
@@ -28,7 +28,7 @@ export async function fetchTrendingTags(limit = 10) {
 }
 
 export async function fetchPostsByTag(tag: string, pageNumber = 1, pageSize = 20) {
-    connectToDB();
+    await connectToDB();
 
     try {
         const skipAmount = (pageNumber - 1) * pageSize;
